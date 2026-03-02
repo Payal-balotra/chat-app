@@ -1,0 +1,20 @@
+import { User } from "./user.model";
+
+export const userRegister = (phone: number) => {
+  const user = User.create({ phone });
+  return user;
+};
+
+export const userProfile = (userId  : string , name : string , bio : string) =>{
+  const user = User.findByIdAndUpdate(userId,{name,bio});
+  return user;
+  
+}
+export const userCreateDirect = (phone: number, name: string) => {
+  const user  = User.create({phone , name});
+  return user;
+};
+export const findUserByPhone = (phone : number)=>{
+  const user = User.findOne({phone});
+  return user;
+}

@@ -1,9 +1,9 @@
 import express from "express";
 import routes from "./routes/index";
-import redis from "./utils/redis";
+import { connectDb } from "./config/db";
 import helmet from "helmet";
 import { errorHandler, notFoundHandler } from "./middleware/globalErrorHandler";
-import { dbStatus } from "./database/db";
+import { dbStatus } from "./config/db";
 const app = express();
 const PORT = 5000;
 app.use(helmet());
@@ -26,6 +26,6 @@ app.use(notFoundHandler);
 app.use(errorHandler);
 
 app.listen(PORT, async () => {
-  // await redis.ping();
   console.log(`Server running on ${PORT}`);
+  connectDb();
 });
