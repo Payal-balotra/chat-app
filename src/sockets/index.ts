@@ -8,10 +8,10 @@ export const setUpSocket = (httpServer: any) => {
   io = new Server(httpServer, {
     cors: {
       origin: "*",
-        methods: ["GET", "POST"]
+      methods: ["GET", "POST"],
     },
   });
-io.use((socket, next) => {
+  io.use((socket, next) => {
     try {
       const authHeader = socket.handshake.headers.authorization;
 
@@ -19,22 +19,20 @@ io.use((socket, next) => {
         return next(new Error("Authorization header missing"));
       }
 
-      const token = authHeader.split(" ")[1]; 
+      const token = authHeader.split(" ")[1];
 
       if (!token) {
         return next(new Error("Token missing"));
       }
 
-      const decoded = verifyJwtToken(token)
-      console.log(decoded,  "decoded user")
+      const decoded = verifyJwtToken(token);
       socket.data.userId = decoded.id;
 
-      next(); 
+      next();
     } catch (error) {
       next(new Error("Invalid or expired token"));
     }
   });
-
 
   io.on("connection", (socket) => {
     console.log("Socket connected:", socket.id);

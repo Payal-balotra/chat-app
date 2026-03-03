@@ -1,32 +1,52 @@
 import { Server, Socket } from "socket.io";
+import { Conversation } from "../modules/conversation/conversation.model";
+import { User } from "../modules/user/user.model";
+import {  findUserByPhone } from "../modules/user/user.services";
 
 export const registerChatEvents = (io: Server, socket: Socket) => {
-  const userId = socket.data;
+  socket.on("startConversation", async (data) => {
+    try {
+     const { targetUserId } = data;
+        console.log(targetUserId)
+      const currentUserId = socket.data.userId;
+ 
+      if (!targetUserId) {
+        return socket.emit("error", {
+          message: "targetUserId is required",
+        });
+      }
 
+      if (targetUserId === currentUserId) {
+        return socket.emit("error", {
+          message: "Cannot start conversation with yourself",
+        });
+      }
 
-  socket.on("joinConversation", (conversationId: string) => {
-    socket.join(conversationId);
-    console.log(`${userId} joined ${conversationId}`);
-  });
+      let conversation = await Conversation.findOne({
+        isGroup: false,
+        participants: {
+          $all: [currentUserId, targetUserId],
+        },
+      });
 
-  socket.on("sendMessage", (data) => {
-    const { conversationId, text } = data;
+      if (!conversation) {
+        conversation = await Conversation.create({
+          participants: [currentUserId, targetUserId],
+          isGroup: false,
+        });
+      }
 
-    // save message to DB here
+      socket.join(conversation._id.toString());
 
-    io.to(conversationId).emit("message:new", {
-      conversationId,
-      senderId: userId,
-      text,
-      createdAt: new Date(),
-    });
-  });
-
-  // typing indicator
-  socket.on("typing", (conversationId: string) => {
-    socket.to(conversationId).emit("user:typing", {
-      userId,
-      conversationId,
-    });
+      socket.emit("conversationStarted", {
+        conversationId: conversation._id,
+        participants: conversation.participants,
+      });
+    } catch (err) {
+      console.error("startConversation error:", err);
+      socket.emit("error", {
+        message: "Failed to start conversation",
+      });
+    }
   });
 };

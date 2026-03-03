@@ -4,9 +4,9 @@ import { userCreateDirect, userProfile } from "./user.services";
 import { response } from "../../utils/response";
 
 export const createUser = catchAsync(async (req: Request, res: Response) => {
-  const { phone, name } = req.body;
-  const user = await userCreateDirect(phone, name);
-  
+  const { phone, name, bio, isVerified } = req.body;
+  const user = await userCreateDirect(phone, name, bio, isVerified);
+
   return response(res, 200, "user registered", user);
 });
 export const createProfile = catchAsync(async (req: Request, res: Response) => {
