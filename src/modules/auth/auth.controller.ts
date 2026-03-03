@@ -5,6 +5,7 @@ import { errorResponse, response } from "../../utils/response";
 import catchAsync from "../../utils/catchAsync";
 import { createMessage, setOtpRedis } from "./auth.services";
 import { findUserByPhone, userRegister } from "../user/user.services";
+import { generateAccessToken, verifyJwtToken } from "../../lib/jwt";
 
 export const register = catchAsync(async (req: Request, res: Response) => {
   const { phone } = req.body;
@@ -13,11 +14,12 @@ export const register = catchAsync(async (req: Request, res: Response) => {
   }
   const existingUser = await findUserByPhone(phone);
   if (existingUser && existingUser.isVerified === true) {
+    const token = generateAccessToken(existingUser.id);
     return response(
       res,
       200,
       "This Number is already registered and verified. You can direclty start converstaion. ",
-      existingUser,
+      token,
     );
   }
   if (existingUser && existingUser.isVerified === false) {
@@ -78,11 +80,9 @@ export const verifyOtp = catchAsync(async (req: Request, res: Response) => {
   if (user) {
     user.isVerified = true;
     await user.save();
+    const token = generateAccessToken(user.id);
+    console.log("user registered successfully")
+  } else {
+    return errorResponse(res, 400, "Not able to register user");
   }
-
-  return response(res, 200, "User registered successfully", user);
-
-  // add user to db
-  // jwt token with user_id
-  // permanent connection established
 });

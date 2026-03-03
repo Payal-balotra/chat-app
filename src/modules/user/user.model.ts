@@ -1,4 +1,4 @@
-import mongoose, { model, Model, mongo, Mongoose, Schema } from "mongoose";
+import mongoose, {  Mongoose, Schema } from "mongoose";
 
 export interface IUser {
   phone: number;

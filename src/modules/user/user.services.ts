@@ -18,3 +18,7 @@ export const findUserByPhone = (phone : number)=>{
   const user = User.findOne({phone});
   return user;
 }
+export const findUserById = (id : string)=>{
+  const user = User.findById(id);
+  return user;
+}

@@ -15,17 +15,21 @@
     "express": "^5.2.1",
     "helmet": "^8.1.0",
     "ioredis": "^5.9.3",
-    "libphonenumber-js": "^1.12.38",
     "mongoose": "^9.2.3",
     "nodemailer": "^8.0.1",
+    "socket.io": "^4.8.3",
+    "socket.io-client": "^4.8.3",
     "twilio": "^5.12.2",
     "websocket": "^1.0.35",
     "zod": "^4.3.6"
   },
   "devDependencies": {
     "@types/express": "^5.0.6",
+    "@types/jsonwebtoken": "^9.0.10",
     "@types/node": "^25.3.2",
     "@types/nodemailer": "^7.0.11",
+    "@types/socket.io": "^3.0.1",
+    "jsonwebtoken": "^9.0.3",
     "nodemon": "^3.1.14",
     "ts-node": "^10.9.2",
     "typescript": "^5.9.3"
