@@ -14,10 +14,11 @@ const conversationSchema = new Schema<IConversation>(
         type: mongoose.Schema.Types.ObjectId,
         ref: "User",
         required: true,
-      },
+      },  
     ],
     isGroup: {
       type: Boolean,
+      default: false
     },
     lastMessage: {
       type: mongoose.Schema.Types.ObjectId,

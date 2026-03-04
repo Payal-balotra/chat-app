@@ -1,32 +1,35 @@
 import { Server, Socket } from "socket.io";
 import { Conversation } from "../modules/conversation/conversation.model";
-import { User } from "../modules/user/user.model";
-import {  findUserByPhone } from "../modules/user/user.services";
+import { Message } from "../modules/message/message.model";
+import redis from "../config/redis";
+import { findUserByPhone } from "../modules/user/user.services";
 
 export const registerChatEvents = (io: Server, socket: Socket) => {
-  socket.on("startConversation", async (data) => {
+  const currentUserId = socket.data.userId;
+
+  socket.on("startConversation", async ({ phoneNumber }) => {
     try {
-     const { targetUserId } = data;
-        console.log(targetUserId)
-      const currentUserId = socket.data.userId;
- 
-      if (!targetUserId) {
-        return socket.emit("error", {
-          message: "targetUserId is required",
-        });
+      if (!phoneNumber) {
+        return socket.emit("error", { message: "phoneNumber required" });
       }
 
-      if (targetUserId === currentUserId) {
+      const user = await findUserByPhone(phoneNumber);
+
+      if (!user) {
+        return socket.emit("error", { message: "User not found" });
+      }
+
+      const targetUserId = user._id;
+
+      if (targetUserId.toString() === currentUserId) {
         return socket.emit("error", {
-          message: "Cannot start conversation with yourself",
+          message: "Cannot chat with yourself",
         });
       }
 
       let conversation = await Conversation.findOne({
         isGroup: false,
-        participants: {
-          $all: [currentUserId, targetUserId],
-        },
+        participants: { $all: [currentUserId, targetUserId] },
       });
 
       if (!conversation) {
@@ -36,17 +39,87 @@ export const registerChatEvents = (io: Server, socket: Socket) => {
         });
       }
 
-      socket.join(conversation._id.toString());
+      const roomId = conversation._id.toString();
+
+      socket.join(roomId);
 
       socket.emit("conversationStarted", {
-        conversationId: conversation._id,
+        conversationId: roomId,
         participants: conversation.participants,
       });
+
     } catch (err) {
       console.error("startConversation error:", err);
-      socket.emit("error", {
-        message: "Failed to start conversation",
+      socket.emit("error", { message: "Failed to start conversation" });
+    }
+  });
+
+  socket.on("sendMessage", async (data) => {
+    try {
+      const { conversationId, type, content, attachments } = data;
+
+      const message = await Message.create({
+        conversationId,
+        sender: currentUserId,
+        type,
+        content,
+        attachments,
+        status: "sent",
       });
+
+      await Conversation.findByIdAndUpdate(conversationId, {
+        lastMessage: message._id,
+      });
+
+      const conversation = await Conversation.findById(conversationId);
+
+      if (!conversation) return;
+
+      const receiverId = conversation.participants.find(
+        (id) => id.toString() !== currentUserId
+      );
+
+      const receiverSocket = await redis.get(`online:${receiverId}`);
+
+      if (receiverSocket) {
+        io.to(receiverSocket).emit("newMessage", message);
+
+        await Message.findByIdAndUpdate(message._id, {
+          status: "delivered",
+        });
+
+      } else {
+        await redis.lpush(`queue:${receiverId}`, JSON.stringify(message));
+      }
+
+      io.to(conversationId).emit("newMessage", message);
+
+    } catch (err) {
+      console.error("sendMessage error:", err);
+      socket.emit("error", { message: "Message failed" });
+    }
+  });
+
+  socket.on("typing", ({ conversationId }) => {
+    socket.to(conversationId).emit("typing", {
+      userId: currentUserId,
+    });
+  });
+
+  socket.on("readMessages", async ({ conversationId }) => {
+    try {
+      await Message.updateMany(
+        { conversationId, status: "delivered" },
+        { status: "read" }
+      );
+
+      socket.to(conversationId).emit("messagesRead", {
+        conversationId,
+        userId: currentUserId,
+      });
+
+    } catch (err) {
+      console.error("readMessages error:", err);
     }
   });
 };

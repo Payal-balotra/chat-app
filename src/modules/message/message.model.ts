@@ -1,51 +1,62 @@
-import mongoose, { Mongoose, Schema } from "mongoose";
-import { Types } from "mongoose";
+import mongoose, { Schema, Types } from "mongoose";
 
 export enum Type {
   TEXT = "text",
   FILE = "file",
-  IMAGE =  "image"
+  IMAGE = "image",
 }
-export enum STATUS { 
-    SENT =  "sent",
-    DELIVERED =  "delivered",
-    READ =  "read"
+
+export enum STATUS {
+  SENT = "sent",
+  DELIVERED = "delivered",
+  READ = "read",
 }
 
 export interface IMessage {
-  convsersationId: Types.ObjectId;
+  conversationId: Types.ObjectId;
   sender: Types.ObjectId;
   type: Type;
-  content : string,
-  attachments : string[],
-  status : STATUS
-
+  content: string;
+  attachments: string[];
+  status: STATUS;
 }
+
 const messageSchema = new Schema<IMessage>(
   {
-    convsersationId: {
+    conversationId: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "Conversation",
-      required : true
+      required: true,
     },
+
+    sender: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "User",
+      required: true,
+    },
+
     type: {
       type: String,
       enum: Object.values(Type),
-      required : true
+      required: true,
     },
-    content : {
-        type : String
-    },
-    attachments : {
-        type : [String],
 
+    content: {
+      type: String,
     },
-    status : {
-        type : String,
-         enum: Object.values(STATUS),
-    }
+
+    attachments: {
+      type: [String],
+      default: [],
+    },
+
+    status: {
+      type: String,
+      enum: Object.values(STATUS),
+      default: STATUS.SENT,
+    },
   },
-  { timestamps: true },
+  { timestamps: true }
 );
 
-export const Message = mongoose.model<IMessage>("User", messageSchema);
+export const Message = mongoose.model<IMessage>("Message", messageSchema);
