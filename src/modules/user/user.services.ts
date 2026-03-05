@@ -18,8 +18,8 @@ export const userCreateDirect = (
   const user = User.create({ phone, name, bio, isVerified });
   return user;
 };
-export const findUserByPhone = (phone: number) => {
-  const user = User.findOne({ phone });
+export const findUserByPhone = async(phone: number) => {
+  const user = await User.findOne({ phone });
   return user;
 };
 export const findUserById = (id: string) => {

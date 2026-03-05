@@ -9,7 +9,6 @@ export const registerChatEvents = (io: Server, socket: Socket) => {
 
   socket.on("startConversation", async ({ phoneNumber }) => {
     try {
-      
       if (!phoneNumber) {
         return socket.emit("error", { message: "phoneNumber required" });
       }
@@ -52,6 +51,45 @@ export const registerChatEvents = (io: Server, socket: Socket) => {
     }
   });
 
+socket.on("groupConversation", async (phoneNumbers: number[]) => {
+  try {
+
+    const targetUsersId: string[] = [];
+    for (const phone of phoneNumbers) {
+      const user = await findUserByPhone(phone);
+      if (user) {
+        targetUsersId.push(user.id);
+      }
+    }
+
+    const participants = [currentUserId, ...targetUsersId];
+    console.log("Participants " , participants)
+    let conversation = await Conversation.findOne({
+      isGroup: true,
+      participants: { $all: participants },
+      $expr: { $eq: [{ $size: "$participants" }, participants.length] }
+    });
+
+    if (!conversation) {
+      conversation = await Conversation.create({
+        participants,
+        isGroup: true
+      });
+    }
+
+    const roomId = conversation._id.toString();
+
+    socket.join(roomId);
+
+    socket.emit("groupConversationStarted", {
+      conversationId: roomId,
+      participants: conversation.participants
+    });
+
+  } catch (error) {
+    console.error(error);
+  }
+});
   socket.on("sendMessage", async (data) => {
     try {
       const { conversationId, type, content, attachments } = data;
