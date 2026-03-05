@@ -9,12 +9,12 @@ export const registerChatEvents = (io: Server, socket: Socket) => {
 
   socket.on("startConversation", async ({ phoneNumber }) => {
     try {
+      
       if (!phoneNumber) {
         return socket.emit("error", { message: "phoneNumber required" });
       }
 
       const user = await findUserByPhone(phoneNumber);
-
       if (!user) {
         return socket.emit("error", { message: "User not found" });
       }
@@ -40,14 +40,12 @@ export const registerChatEvents = (io: Server, socket: Socket) => {
       }
 
       const roomId = conversation._id.toString();
-
       socket.join(roomId);
 
       socket.emit("conversationStarted", {
         conversationId: roomId,
         participants: conversation.participants,
       });
-
     } catch (err) {
       console.error("startConversation error:", err);
       socket.emit("error", { message: "Failed to start conversation" });
@@ -76,24 +74,22 @@ export const registerChatEvents = (io: Server, socket: Socket) => {
       if (!conversation) return;
 
       const receiverId = conversation.participants.find(
-        (id) => id.toString() !== currentUserId
+        (id) => id.toString() !== currentUserId,
       );
 
       const receiverSocket = await redis.get(`online:${receiverId}`);
 
       if (receiverSocket) {
-        io.to(receiverSocket).emit("newMessage", message);
+        io.to(receiverSocket).emit("newMessage", message.content);
 
         await Message.findByIdAndUpdate(message._id, {
           status: "delivered",
         });
-
       } else {
         await redis.lpush(`queue:${receiverId}`, JSON.stringify(message));
       }
 
-      io.to(conversationId).emit("newMessage", message);
-
+      // io.to(conversationId).emit("newMessage", message.content);
     } catch (err) {
       console.error("sendMessage error:", err);
       socket.emit("error", { message: "Message failed" });
@@ -110,14 +106,13 @@ export const registerChatEvents = (io: Server, socket: Socket) => {
     try {
       await Message.updateMany(
         { conversationId, status: "delivered" },
-        { status: "read" }
+        { status: "read" },
       );
 
       socket.to(conversationId).emit("messagesRead", {
         conversationId,
         userId: currentUserId,
       });
-
     } catch (err) {
       console.error("readMessages error:", err);
     }

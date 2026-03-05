@@ -7,11 +7,11 @@ import { Conversation } from "../modules/conversation/conversation.model";
 let io: Server;
 
 export const setUpSocket = (httpServer: any) => {
-
   io = new Server(httpServer, {
     cors: {
       origin: "*",
     },
+    transports: ["websocket", "polling"],
   });
 
   io.use((socket, next) => {
@@ -29,22 +29,18 @@ export const setUpSocket = (httpServer: any) => {
       socket.data.userId = decoded.id;
 
       next();
-
     } catch (err) {
       next(new Error("Invalid token"));
     }
   });
 
   io.on("connection", async (socket) => {
-
     const userId = socket.data.userId;
 
     console.log("User connected:", userId);
 
-    // store online user
     await redis.set(`online:${userId}`, socket.id);
 
-    // 🔹 AUTO JOIN ALL USER CONVERSATIONS
     const conversations = await Conversation.find({
       participants: userId,
     });
@@ -53,11 +49,13 @@ export const setUpSocket = (httpServer: any) => {
       socket.join(conversation._id.toString());
     });
 
-    // 🔹 CHECK OFFLINE MESSAGES
     const pendingMessages = await redis.lrange(`queue:${userId}`, 0, -1);
 
+    
     for (const msg of pendingMessages) {
-      socket.emit("newMessage", JSON.parse(msg));
+       io.to(socket.id).emit("newMessage",JSON.parse(msg));
+      // io.emit("newMessage", JSON.parse(msg));
+      // socket.emit("newMessage", JSON.parse(msg));
     }
 
     if (pendingMessages.length) {
@@ -67,13 +65,10 @@ export const setUpSocket = (httpServer: any) => {
     registerChatEvents(io, socket);
 
     socket.on("disconnect", async () => {
-
       console.log("User disconnected:", userId);
 
       await redis.del(`online:${userId}`);
-
     });
-
   });
 };
 

@@ -16,3 +16,9 @@ export const createProfile = catchAsync(async (req: Request, res: Response) => {
   const user = await userProfile(userId, name, bio);
   return response(res, 200, "user profile created", user);
 });
+
+// export const onlineUsers = catchAsync(
+//   async (req: Resquest, res: Reponse) => {
+
+//   },
+// );
