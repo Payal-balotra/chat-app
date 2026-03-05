@@ -3,6 +3,7 @@ import { verifyJwtToken } from "../lib/jwt";
 import { registerChatEvents } from "./chat.io";
 import redis from "../config/redis";
 import { Conversation } from "../modules/conversation/conversation.model";
+import { User } from "../modules/user/user.model";
 
 let io: Server;
 
@@ -54,8 +55,7 @@ export const setUpSocket = (httpServer: any) => {
     
     for (const msg of pendingMessages) {
        io.to(socket.id).emit("newMessage",JSON.parse(msg));
-      // io.emit("newMessage", JSON.parse(msg));
-      // socket.emit("newMessage", JSON.parse(msg));
+
     }
 
     if (pendingMessages.length) {
@@ -68,6 +68,9 @@ export const setUpSocket = (httpServer: any) => {
       console.log("User disconnected:", userId);
 
       await redis.del(`online:${userId}`);
+       await User.findByIdAndUpdate(userId, {
+    lastSeen: new Date(),
+  });
     });
   });
 };

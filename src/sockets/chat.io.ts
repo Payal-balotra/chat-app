@@ -51,48 +51,62 @@ export const registerChatEvents = (io: Server, socket: Socket) => {
     }
   });
 
-socket.on("groupConversation", async (phoneNumbers: number[]) => {
-  try {
-
-    const targetUsersId: string[] = [];
-    for (const phone of phoneNumbers) {
-      const user = await findUserByPhone(phone);
-      if (user) {
-        targetUsersId.push(user.id);
+  socket.on("groupConversation", async (phoneNumbers: number[]) => {
+    try {
+      const targetUsersId: string[] = [];
+      for (const phone of phoneNumbers) {
+        const user = await findUserByPhone(phone);
+        if (user) {
+          targetUsersId.push(user.id);
+        }
       }
-    }
 
-    const participants = [currentUserId, ...targetUsersId];
-    let conversation = await Conversation.findOne({
-      isGroup: true, 
-      participants: { $all: participants },
-      $expr: { $eq: [{ $size: "$participants" }, participants.length] }
-    });
-
-    if (!conversation) {
-      conversation = await Conversation.create({
-        participants,
-        admin  : currentUserId,
-        isGroup: true
+      const participants = [currentUserId, ...targetUsersId];
+      let conversation = await Conversation.findOne({
+        isGroup: true,
+        participants: { $all: participants },
+        $expr: { $eq: [{ $size: "$participants" }, participants.length] },
       });
+
+      if (!conversation) {
+        conversation = await Conversation.create({
+          participants,
+          admin: currentUserId,
+          isGroup: true,
+        });
+      }
+
+      const roomId = conversation._id.toString();
+
+      const conversations = await Conversation.find({
+        participants: currentUserId,
+      });
+
+      for (const conv of conversations) {
+        socket.join(conv._id.toString());
+      }
+
+      socket.emit("groupConversationStarted", {
+        conversationId: roomId,
+        participants: conversation.participants,
+      });
+    } catch (error) {
+      console.error(error);
     }
-
-    const roomId = conversation._id.toString();
-
-    socket.join(roomId);
-
-    socket.emit("groupConversationStarted", {
-      conversationId: roomId,
-      participants: conversation.participants
-    });
-
-  } catch (error) {
-    console.error(error);
-  }
-});
+  });
   socket.on("sendMessage", async (data) => {
     try {
       const { conversationId, type, content, attachments } = data;
+
+      if (!conversationId) {
+        return socket.emit("error", { message: "conversationId required" });
+      }
+
+      const conversation = await Conversation.findById(conversationId);
+
+      if (!conversation) {
+        return socket.emit("error", { message: "Conversation not found" });
+      }
 
       const message = await Message.create({
         conversationId,
@@ -107,30 +121,59 @@ socket.on("groupConversation", async (phoneNumbers: number[]) => {
         lastMessage: message._id,
       });
 
-      const conversation = await Conversation.findById(conversationId);
-
-      if (!conversation) return;
-
-      const receiverId = conversation.participants.find(
-        (id) => id.toString() !== currentUserId,
-      );
-
-      const receiverSocket = await redis.get(`online:${receiverId}`);
-
-      if (receiverSocket) {
-        io.to(receiverSocket).emit("newMessage", message.content);
-
-        await Message.findByIdAndUpdate(message._id, {
-          status: "delivered",
-        });
-      } else {
-        await redis.lpush(`queue:${receiverId}`, JSON.stringify(message));
-      }
-
-      // io.to(conversationId).emit("newMessage", message.content);
+      socket.to(conversationId).emit("newMessage", {
+        conversationId,
+        message,
+      });
     } catch (err) {
       console.error("sendMessage error:", err);
       socket.emit("error", { message: "Message failed" });
+    }
+  });
+
+  socket.on("addGroupMember", async ({ conversationId, phoneNumber }) => {
+    try {
+      if (!conversationId || !phoneNumber) {
+        return socket.emit("error", {
+          message: "conversationId and phoneNumber required",
+        });
+      }
+
+      const conversation = await Conversation.findById(conversationId);
+
+      if (!conversation || !conversation.isGroup) {
+        return socket.emit("error", { message: "Group not found" });
+      }
+
+      if (conversation.admin.toString() !== currentUserId) {
+        return socket.emit("error", { message: "Only admin can add members" });
+      }
+
+      const user = await findUserByPhone(phoneNumber);
+
+      if (!user) {
+        return socket.emit("error", { message: "User not found" });
+      }
+
+      const userId = user._id.toString();
+
+      if (conversation.participants.includes(userId)) {
+        return socket.emit("error", { message: "User already in group" });
+      }
+
+      conversation.participants.push(userId);
+      await conversation.save();
+
+      const roomId = conversation._id.toString();
+
+      io.to(roomId).emit("memberAdded", {
+        conversationId: roomId,
+        userId,
+        addedBy: currentUserId,
+      });
+    } catch (error) {
+      console.error("addGroupMember error:", error);
+      socket.emit("error", { message: "Failed to add member" });
     }
   });
 
@@ -140,6 +183,99 @@ socket.on("groupConversation", async (phoneNumbers: number[]) => {
     });
   });
 
+  socket.on("removeGroupMember", async ({ conversationId, userId }) => {
+  try {
+    if (!conversationId || !userId) {
+      return socket.emit("error", {
+        message: "conversationId and userId required",
+      });
+    }
+
+    const conversation = await Conversation.findById(conversationId);
+
+    if (!conversation || !conversation.isGroup) {
+      return socket.emit("error", { message: "Group not found" });
+    }
+
+    if (conversation.admin.toString() !== currentUserId) {
+      return socket.emit("error", {
+        message: "Only admin can remove members",
+      });
+    }
+
+    if (conversation.admin.toString() === userId) {
+      return socket.emit("error", {
+        message: "Admin cannot remove themselves",
+      });
+    }
+
+    await Conversation.findByIdAndUpdate(
+      conversationId,
+      { $pull: { participants: userId } }
+    );
+
+    const roomId = conversation._id.toString();
+
+    io.to(roomId).emit("memberRemoved", {
+      conversationId: roomId,
+      userId,
+      removedBy: currentUserId,
+    });
+
+    const userSocket = await redis.get(`online:${userId}`);
+
+    if (userSocket) {
+      io.sockets.sockets.get(userSocket)?.leave(roomId);
+    }
+
+  } catch (error) {
+    console.error("removeGroupMember error:", error);
+    socket.emit("error", { message: "Failed to remove member" });
+  }
+});
+
+socket.on("changeAdmin", async ({ conversationId, newAdminId }) => {
+  try {
+    if (!conversationId || !newAdminId) {
+      return socket.emit("error", {
+        message: "conversationId and newAdminId required",
+      });
+    }
+
+    const conversation = await Conversation.findById(conversationId);
+
+    if (!conversation || !conversation.isGroup) {
+      return socket.emit("error", { message: "Group not found" });
+    }
+
+    if (conversation.admin.toString() !== currentUserId) {
+      return socket.emit("error", {
+        message: "Only admin can change admin",
+      });
+    }
+
+    if (!conversation.participants.includes(newAdminId)) {
+      return socket.emit("error", {
+        message: "New admin must be a group member",
+      });
+    }
+
+    conversation.admin = newAdminId;
+    await conversation.save();
+
+    const roomId = conversation._id.toString();
+
+    io.to(roomId).emit("adminChanged", {
+      conversationId: roomId,
+      oldAdmin: currentUserId,
+      newAdmin: newAdminId,
+    });
+
+  } catch (error) {
+    console.error("changeAdmin error:", error);
+    socket.emit("error", { message: "Failed to change admin" });
+  }
+});
   socket.on("readMessages", async ({ conversationId }) => {
     try {
       await Message.updateMany(
