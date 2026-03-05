@@ -63,9 +63,8 @@ socket.on("groupConversation", async (phoneNumbers: number[]) => {
     }
 
     const participants = [currentUserId, ...targetUsersId];
-    console.log("Participants " , participants)
     let conversation = await Conversation.findOne({
-      isGroup: true,
+      isGroup: true, 
       participants: { $all: participants },
       $expr: { $eq: [{ $size: "$participants" }, participants.length] }
     });
@@ -73,6 +72,7 @@ socket.on("groupConversation", async (phoneNumbers: number[]) => {
     if (!conversation) {
       conversation = await Conversation.create({
         participants,
+        admin  : currentUserId,
         isGroup: true
       });
     }

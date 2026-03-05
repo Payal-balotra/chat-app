@@ -4,6 +4,7 @@ import { Types } from "mongoose";
 export interface IConversation {
   participants: Types.ObjectId[];
   isGroup: boolean;
+  admin: Types.ObjectId;
   lastMessage: Types.ObjectId;
 }
 
@@ -14,16 +15,20 @@ const conversationSchema = new Schema<IConversation>(
         type: mongoose.Schema.Types.ObjectId,
         ref: "User",
         required: true,
-      },  
+      },
     ],
     isGroup: {
       type: Boolean,
-      default: false
+      default: false,
+    },
+    admin: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "User",
     },
     lastMessage: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "Message",
-      default : null
+      default: null,
     },
   },
   { timestamps: true },
