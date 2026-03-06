@@ -1,6 +1,6 @@
 import { Request, Response } from "express";
 import catchAsync from "../../utils/catchAsync";
-import { userCreateDirect, userProfile } from "./user.services";
+import { getUsers, userCreateDirect, userProfile } from "./user.services";
 import { response } from "../../utils/response";
 
 export const createUser = catchAsync(async (req: Request, res: Response) => {
@@ -16,9 +16,7 @@ export const createProfile = catchAsync(async (req: Request, res: Response) => {
   const user = await userProfile(userId, name, bio);
   return response(res, 200, "user profile created", user);
 });
-
-// export const onlineUsers = catchAsync(
-//   async (req: Resquest, res: Reponse) => {
-
-//   },
-// );
+export const getAllUsers = catchAsync(async(req : Request, res: Response)=>{
+  const users = await getUsers();
+  return response(res,200,"All Users",users)
+})

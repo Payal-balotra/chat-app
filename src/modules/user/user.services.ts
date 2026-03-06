@@ -26,3 +26,8 @@ export const findUserById = (id: string) => {
   const user = User.findById(id);
   return user;
 };
+
+export const getUsers = () =>{
+  const users = User.find({});
+  return users
+}

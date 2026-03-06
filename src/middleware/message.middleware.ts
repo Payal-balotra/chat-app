@@ -1,18 +1,26 @@
 import { NextFunction, Request, Response } from "express";
-import { twilioClient } from "../config/twilio";
+import { parsePhoneNumberFromString } from "libphonenumber-js";
 import { errorResponse } from "../utils/response";
 
-export const numberValidation = async (
+export const numberValidation = (
   req: Request,
   res: Response,
-  next: NextFunction,
+  next: NextFunction
 ) => {
-  const phone = req.body;
+  const { phone } = req.body;
 
-  const phoneNumber = await twilioClient.lookups.v2.phoneNumbers(phone).fetch();
-  if (phoneNumber.valid) {
-    next();
-  } else {
-    return errorResponse(res, 422, "invalid phone number");
+  if (!phone) {
+    return errorResponse(res, 400, "Phone number is required");
   }
+
+  const phoneNumber = parsePhoneNumberFromString(phone);
+
+  if (!phoneNumber || !phoneNumber.isValid()) {
+    return errorResponse(res, 422, "Invalid phone number");
+  }
+
+  // normalize phone number
+  req.body.phone = phoneNumber.number;
+
+  next();
 };

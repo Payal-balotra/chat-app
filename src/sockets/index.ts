@@ -38,9 +38,12 @@ export const setUpSocket = (httpServer: any) => {
   io.on("connection", async (socket) => {
     const userId = socket.data.userId;
 
-    console.log("User connected:", userId);
-
     await redis.set(`online:${userId}`, socket.id);
+
+    const keys = await redis.keys("online:*");
+
+    const users = keys.map((key) => key.split(":")[1]);
+    io.emit("getOnlineUsers", users);
 
     const conversations = await Conversation.find({
       participants: userId,
@@ -52,10 +55,8 @@ export const setUpSocket = (httpServer: any) => {
 
     const pendingMessages = await redis.lrange(`queue:${userId}`, 0, -1);
 
-    
     for (const msg of pendingMessages) {
-       io.to(socket.id).emit("newMessage",JSON.parse(msg));
-
+      io.to(socket.id).emit("newMessage", JSON.parse(msg));
     }
 
     if (pendingMessages.length) {
@@ -68,9 +69,14 @@ export const setUpSocket = (httpServer: any) => {
       console.log("User disconnected:", userId);
 
       await redis.del(`online:${userId}`);
-       await User.findByIdAndUpdate(userId, {
-    lastSeen: new Date(),
-  });
+
+      const keys = await redis.keys("online:*");
+      const users = keys.map((key) => key.split(":")[1]);
+
+      io.emit("getOnlineUsers", users);
+      await User.findByIdAndUpdate(userId, {
+        lastSeen: new Date(),
+      });
     });
   });
 };

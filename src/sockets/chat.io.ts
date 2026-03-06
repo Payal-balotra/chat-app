@@ -86,7 +86,7 @@ export const registerChatEvents = (io: Server, socket: Socket) => {
         socket.join(conv._id.toString());
       }
 
-      socket.emit("groupConversationStarted", {
+      socket.to(roomId).emit("groupConversationStarted", {
         conversationId: roomId,
         participants: conversation.participants,
       });
@@ -155,7 +155,7 @@ export const registerChatEvents = (io: Server, socket: Socket) => {
         return socket.emit("error", { message: "User not found" });
       }
 
-      const userId = user._id.toString();
+      const userId = user._id;
 
       if (conversation.participants.includes(userId)) {
         return socket.emit("error", { message: "User already in group" });
@@ -292,3 +292,5 @@ socket.on("changeAdmin", async ({ conversationId, newAdminId }) => {
     }
   });
 };
+
+// socket.on("getOnlineUsers",async())

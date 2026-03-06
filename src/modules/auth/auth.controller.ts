@@ -5,7 +5,7 @@ import { errorResponse, response } from "../../utils/response";
 import catchAsync from "../../utils/catchAsync";
 import { createMessage, setOtpRedis } from "./auth.services";
 import { findUserByPhone, userRegister } from "../user/user.services";
-import { generateAccessToken, verifyJwtToken } from "../../lib/jwt";
+import { generateAccessToken } from "../../lib/jwt";
 
 export const register = catchAsync(async (req: Request, res: Response) => {
   const { phone } = req.body;
@@ -19,7 +19,7 @@ export const register = catchAsync(async (req: Request, res: Response) => {
       res,
       200,
       "This Number is already registered and verified. You can direclty start converstaion. ",
-      token,
+      {existingUser,token}
     );
   }
   if (existingUser && existingUser.isVerified === false) {
@@ -39,7 +39,7 @@ export const register = catchAsync(async (req: Request, res: Response) => {
 
   const otp = generateOTP();
   setOtpRedis(phone, otp);
-  const result = createMessage(phone, otp);
+  const result = await createMessage(phone, otp);
   if (!result) {
     return errorResponse(res, 500, "Error in sending message");
   }
@@ -81,7 +81,7 @@ export const verifyOtp = catchAsync(async (req: Request, res: Response) => {
     user.isVerified = true;
     await user.save();
     const token = generateAccessToken(user.id);
-    console.log("user registered successfully")
+    return response(res,200,"token",{user,token});
   } else {
     return errorResponse(res, 400, "Not able to register user");
   }
