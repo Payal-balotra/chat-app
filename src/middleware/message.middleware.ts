@@ -7,20 +7,21 @@ export const numberValidation = (
   res: Response,
   next: NextFunction
 ) => {
-  const { phone } = req.body;
+  let { phone } = req.body;
 
   if (!phone) {
     return errorResponse(res, 400, "Phone number is required");
   }
 
-  const phoneNumber = parsePhoneNumberFromString(phone);
+  phone = phone.toString().trim();
 
-  if (!phoneNumber || !phoneNumber.isValid()) {
+  const parsed = parsePhoneNumberFromString(phone, "IN");
+
+  if (!parsed || !parsed.isValid()) {
     return errorResponse(res, 422, "Invalid phone number");
   }
 
-  // normalize phone number
-  req.body.phone = phoneNumber.number;
+  req.body.phone = parsed.format("E.164");
 
   next();
 };

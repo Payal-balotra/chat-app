@@ -10,7 +10,9 @@ let io: Server;
 export const setUpSocket = (httpServer: any) => {
   io = new Server(httpServer, {
     cors: {
-      origin: "*",
+      origin: "http://localhost:5174",
+      methods: ["GET", "POST", "PUT", "DELETE"],
+      credentials : true
     },
     transports: ["websocket", "polling"],
   });
@@ -37,7 +39,7 @@ export const setUpSocket = (httpServer: any) => {
 
   io.on("connection", async (socket) => {
     const userId = socket.data.userId;
-
+    console.log("connection established")
     await redis.set(`online:${userId}`, socket.id);
 
     const keys = await redis.keys("online:*");
