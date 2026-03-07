@@ -139,7 +139,7 @@ export const registerChatEvents = (io: Server, socket: Socket) => {
 
       const message = await Message.create({
         conversationId,
-        sender: currentUserId,
+        sender: socket.data.userId,
         type,
         content,
         attachments,

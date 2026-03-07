@@ -10,7 +10,7 @@ let io: Server;
 export const setUpSocket = (httpServer: any) => {
   io = new Server(httpServer, {
     cors: {
-      origin: "http://localhost:5174",
+      origin: "http://localhost:5173",
       methods: ["GET", "POST", "PUT", "DELETE"],
       credentials : true
     },
@@ -69,7 +69,7 @@ export const setUpSocket = (httpServer: any) => {
 
     socket.on("disconnect", async () => {
       console.log("User disconnected:", userId);
-
+  
       await redis.del(`online:${userId}`);
 
       const keys = await redis.keys("online:*");
