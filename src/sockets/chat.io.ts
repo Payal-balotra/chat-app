@@ -43,14 +43,14 @@ export const registerChatEvents = (io: Server, socket: Socket) => {
 
       socket.join(roomId);
 
-      const targetSocketId = await redis.get(`online:${targetUserId}`);
+      const sockets = await redis.smembers(`online:${targetUserId}`);
 
-      if (targetSocketId) {
-        const targetSocket = io.sockets.sockets.get(targetSocketId);
+      for (const socketId of sockets) {
+        const targetSocket = io.sockets.sockets.get(socketId);
         targetSocket?.join(roomId);
       }
 
-      io.emit("conversationStarted", {
+      io.to(roomId).emit("conversationStarted", {
         conversationId: roomId,
         participants: conversation.participants,
         messages: pastMessages,
@@ -121,14 +121,16 @@ export const registerChatEvents = (io: Server, socket: Socket) => {
         (p) => p.toString() !== socket.data.userId,
       );
 
-      const receiverSocket = await redis.get(`online:${receiverId}`);
+      const receiverSockets = await redis.smembers(`online:${receiverId}`);
 
       let status = STATUS.SENT;
 
-      if (receiverSocket) {
+      if (receiverSockets.length) {
         const room = io.sockets.adapter.rooms.get(conversationId);
 
-        const isInRoom = room?.has(receiverSocket);
+        const isInRoom = receiverSockets.some((socketId) =>
+          room?.has(socketId),
+        );
 
         if (isInRoom) {
           status = STATUS.READ;
@@ -136,7 +138,6 @@ export const registerChatEvents = (io: Server, socket: Socket) => {
           status = STATUS.DELIVERED;
         }
       }
-
       const message = await Message.create({
         conversationId,
         sender: socket.data.userId,
@@ -266,10 +267,10 @@ export const registerChatEvents = (io: Server, socket: Socket) => {
         removedBy: currentUserId,
       });
 
-      const userSocket = await redis.get(`online:${userId}`);
+      const sockets = await redis.smembers(`online:${userId}`);
 
-      if (userSocket) {
-        io.sockets.sockets.get(userSocket)?.leave(roomId);
+      for (const socketId of sockets) {
+        io.sockets.sockets.get(socketId)?.leave(roomId);
       }
     } catch (error) {
       console.error("removeGroupMember error:", error);

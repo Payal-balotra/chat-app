@@ -4,6 +4,7 @@ import { registerChatEvents } from "./chat.io";
 import redis from "../config/redis";
 import { Conversation } from "../modules/conversation/conversation.model";
 import { User } from "../modules/user/user.model";
+import { Message, STATUS } from "../modules/message/message.model";
 
 let io: Server;
 
@@ -12,7 +13,7 @@ export const setUpSocket = (httpServer: any) => {
     cors: {
       origin: "http://localhost:5173",
       methods: ["GET", "POST", "PUT", "DELETE"],
-      credentials : true
+      credentials: true,
     },
     transports: ["websocket", "polling"],
   });
@@ -39,8 +40,8 @@ export const setUpSocket = (httpServer: any) => {
 
   io.on("connection", async (socket) => {
     const userId = socket.data.userId;
-    console.log("connection established")
-    await redis.set(`online:${userId}`, socket.id);
+    console.log("connection established");
+    await redis.sadd(`online:${userId}`, socket.id);
 
     const keys = await redis.keys("online:*");
 
@@ -55,30 +56,45 @@ export const setUpSocket = (httpServer: any) => {
       socket.join(conversation._id.toString());
     });
 
-    const pendingMessages = await redis.lrange(`queue:${userId}`, 0, -1);
-
+    const pendingMessages = await Message.find({
+      receiver: userId,
+      status: STATUS.SENT,
+    });
     for (const msg of pendingMessages) {
-      io.to(socket.id).emit("newMessage", JSON.parse(msg));
+      socket.emit("newMessage", msg);
     }
 
-    if (pendingMessages.length) {
-      await redis.del(`queue:${userId}`);
-    }
+    await Message.updateMany(
+      {
+        receiver: userId,
+        status: STATUS.SENT,
+      },
+      {
+        status: STATUS.DELIVERED,
+      },
+    );
 
     registerChatEvents(io, socket);
 
     socket.on("disconnect", async () => {
       console.log("User disconnected:", userId);
-  
-      await redis.del(`online:${userId}`);
+
+      await redis.srem(`online:${userId}`, socket.id);
+
+      const remainingSockets = await redis.scard(`online:${userId}`);
+
+      if (remainingSockets === 0) {
+        await redis.del(`online:${userId}`);
+
+        await User.findByIdAndUpdate(userId, {
+          lastSeen: new Date(),
+        });
+      }
 
       const keys = await redis.keys("online:*");
       const users = keys.map((key) => key.split(":")[1]);
 
       io.emit("getOnlineUsers", users);
-      await User.findByIdAndUpdate(userId, {
-        lastSeen: new Date(),
-      });
     });
   });
 };
