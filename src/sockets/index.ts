@@ -5,6 +5,7 @@ import redis from "../config/redis";
 import { Conversation } from "../modules/conversation/conversation.model";
 import { User } from "../modules/user/user.model";
 import { Message, STATUS } from "../modules/message/message.model";
+import { findUserById } from "../modules/user/user.services";
 
 let io: Server;
 
@@ -18,7 +19,7 @@ export const setUpSocket = (httpServer: any) => {
     transports: ["websocket", "polling"],
   });
 
-  io.use((socket, next) => {
+  io.use(async (socket, next) => {
     try {
       const authHeader = socket.handshake.headers.authorization;
 
@@ -28,10 +29,8 @@ export const setUpSocket = (httpServer: any) => {
 
       const token = authHeader.split(" ")[1];
 
-      const decoded = verifyJwtToken(token);
-
-      socket.data.userId = decoded.id;
-
+      const decoded = await verifyJwtToken(token);
+      socket.data.userId = decoded?.id;
       next();
     } catch (err) {
       next(new Error("Invalid token"));
@@ -40,8 +39,10 @@ export const setUpSocket = (httpServer: any) => {
 
   io.on("connection", async (socket) => {
     const userId = socket.data.userId;
-    console.log("connection established");
+    console.log("connection established", userId);
+    socket.emit("me", socket.data.user);
     await redis.sadd(`online:${userId}`, socket.id);
+    
 
     const keys = await redis.keys("online:*");
 

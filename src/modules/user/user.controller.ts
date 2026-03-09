@@ -20,3 +20,9 @@ export const getAllUsers = catchAsync(async(req : Request, res: Response)=>{
   const users = await getUsers();
   return response(res,200,"All Users",users)
 })
+
+// export const getUser = catchAsync(async(req : Request, res: Response)=>{
+  
+//   const user  = req.user ;
+//   return user;
+// })

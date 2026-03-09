@@ -1,8 +1,9 @@
 import jwt, { JwtPayload } from "jsonwebtoken";
 import { config } from "../config/config";
+import { findUserById } from "../modules/user/user.services";
 
-export const generateAccessToken = (id : string) => {
-  const token = jwt.sign({id}, config.secretKey, {expiresIn: "7d"})
+export const generateAccessToken = (id: string) => {
+  const token = jwt.sign({ id }, config.secretKey, { expiresIn: "7d" });
   return token;
 };
 
@@ -12,8 +13,8 @@ export const generateAccessToken = (id : string) => {
 //   });
 // };
 
-export const verifyJwtToken = (token: string) => {
-  const decoded = jwt.verify(token, config.secretKey) as JwtPayload;
+export const verifyJwtToken = async (token: string) => {
+  const decoded =  jwt.verify(token, config.secretKey) as JwtPayload;
   return decoded;
 };
 // export const verifyRefreshToken = (token: string) => {

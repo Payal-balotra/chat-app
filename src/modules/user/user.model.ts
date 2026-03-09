@@ -6,6 +6,7 @@ export interface IUser {
   bio: string;
   isVerified: boolean;
   isOnline: boolean;
+  lastSeen : Date;
 }
 const userSchema = new Schema<IUser>(
   {
@@ -27,8 +28,12 @@ const userSchema = new Schema<IUser>(
     isOnline: {
       type: Boolean,
     },
+    lastSeen : {
+      type : Date
+    }
   },
   { timestamps: true },
 );
 
 export const User = mongoose.model<IUser>("User", userSchema);
+  
