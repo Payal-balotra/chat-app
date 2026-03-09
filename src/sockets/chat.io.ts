@@ -96,9 +96,26 @@ export const registerChatEvents = (io: Server, socket: Socket) => {
         socket.join(conv._id.toString());
       }
 
-      socket.to(roomId).emit("groupConversationStarted", {
+      socket.emit("groupConversationStarted", {
         conversationId: roomId,
         participants: conversation.participants,
+      });
+    } catch (error) {
+      console.error(error);
+    }
+  });
+
+  socket.on("openGroupConversation", async ({ conversationId }) => {
+    try {
+      const conversation = await Conversation.findById(conversationId);
+      if (!conversation) return;
+      const pastMessages = await Message.find({
+        conversationId: conversationId,
+      });
+      socket.emit("groupConversationStarted", {
+        conversationId: conversationId,
+        participants: conversation.participants,
+        messages: pastMessages,
       });
     } catch (error) {
       console.error(error);
@@ -141,6 +158,7 @@ export const registerChatEvents = (io: Server, socket: Socket) => {
       const message = await Message.create({
         conversationId,
         sender: socket.data.userId,
+        receiver: receiverId,
         type,
         content,
         attachments,

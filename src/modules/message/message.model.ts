@@ -15,6 +15,7 @@ export enum STATUS {
 export interface IMessage {
   conversationId: Types.ObjectId;
   sender: Types.ObjectId;
+  receiver : Types.ObjectId; 
   type: Type;
   content: string;
   attachments: string[];
@@ -30,6 +31,11 @@ const messageSchema = new Schema<IMessage>(
     },
 
     sender: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "User",
+      required: true,
+    },
+    receiver: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "User",
       required: true,
@@ -56,7 +62,7 @@ const messageSchema = new Schema<IMessage>(
       default: STATUS.SENT,
     },
   },
-  { timestamps: true }
+  { timestamps: true },
 );
 
 export const Message = mongoose.model<IMessage>("Message", messageSchema);
