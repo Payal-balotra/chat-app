@@ -163,8 +163,7 @@ export const registerChatEvents = (io: Server, socket: Socket) => {
 
         if (isInRoom) {
           status = STATUS.READ;
-        } else { 
-           
+        } else {
           status = STATUS.DELIVERED;
         }
       }
@@ -186,12 +185,15 @@ export const registerChatEvents = (io: Server, socket: Socket) => {
         conversationId,
         message,
       });
-      //  conversation.participants.forEach(participantId => {
-      //    if (participantId.toString() !== currentUserId.toString()) {
-      //       io.to(participantId.toString()).emit("newMessage", { conversationId, message });
-      //  }
-      //  })
-      } catch (err) {
+      conversation.participants.forEach((participantId) => {
+        if (participantId.toString() !== currentUserId.toString()) {
+          io.to(participantId.toString()).emit("newMessage", {
+            conversationId,
+            message,
+          });
+        }
+      });
+    } catch (err) {
       console.error("sendMessage error:", err);
       socket.emit("error", { message: "Message failed" });
     }

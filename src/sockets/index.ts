@@ -83,12 +83,10 @@ export const setUpSocket = (httpServer: any) => {
     socket.on("disconnect", async () => {
       console.log("User disconnected:", userId);
 
-      console.log("redis", socket.id);
 
       await redis.srem(`online:${userId}`, socket.id);
 
       const remainingSockets = await redis.scard(`online:${userId}`);
-      console.log(remainingSockets, "remaninig sockets");
       if (remainingSockets === 0) {
         await redis.del(`online:${userId}`);
 
@@ -98,7 +96,6 @@ export const setUpSocket = (httpServer: any) => {
       }
 
       const keys = await redis.keys("online:*");
-      console.log("keys", keys);
       const users = keys.map((key) => key.split(":")[1]);
 
       io.emit("getOnlineUsers", users);
