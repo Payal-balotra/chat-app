@@ -39,11 +39,14 @@ export const setUpSocket = (httpServer: any) => {
 
   io.on("connection", async (socket) => {
     const userId = socket.data.userId;
+    if (userId) {
+      socket.join(userId.toString());
+    }
     console.log("connection established", userId);
     socket.emit("me", socket.data.user);
 
     await redis.sadd(`online:${userId}`, socket.id);
-    
+
     const keys = await redis.keys("online:*");
 
     const users = keys.map((key) => key.split(":")[1]);
@@ -74,11 +77,32 @@ export const setUpSocket = (httpServer: any) => {
         status: STATUS.DELIVERED,
       },
     );
-     socket.emit("existingConversations", conversations);
 
     registerChatEvents(io, socket);
 
-     
+    socket.on("disconnect", async () => {
+      console.log("User disconnected:", userId);
+
+      console.log("redis", socket.id);
+
+      await redis.srem(`online:${userId}`, socket.id);
+
+      const remainingSockets = await redis.scard(`online:${userId}`);
+      console.log(remainingSockets, "remaninig sockets");
+      if (remainingSockets === 0) {
+        await redis.del(`online:${userId}`);
+
+        await User.findByIdAndUpdate(userId, {
+          lastSeen: new Date(),
+        });
+      }
+
+      const keys = await redis.keys("online:*");
+      console.log("keys", keys);
+      const users = keys.map((key) => key.split(":")[1]);
+
+      io.emit("getOnlineUsers", users);
+    });
   });
 };
 

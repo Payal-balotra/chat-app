@@ -5,6 +5,7 @@ export interface IConversation {
   participants: Types.ObjectId[];
   isGroup: boolean;
   admin: Types.ObjectId;
+  name : string;
   lastMessage: Types.ObjectId;
 }
 
@@ -20,6 +21,9 @@ const conversationSchema = new Schema<IConversation>(
     isGroup: {
       type: Boolean,
       default: false,
+    },
+    name : {
+      type : String,
     },
     admin: {
       type: mongoose.Schema.Types.ObjectId,

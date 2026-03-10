@@ -31,3 +31,8 @@ export const getUsers = () =>{
   const users = User.find({});
   return users
 }
+
+export const updateUser = async(id: string, data: any)=>{
+  const user = User.findByIdAndUpdate(id,data);
+  return user;
+}

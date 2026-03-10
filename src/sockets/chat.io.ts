@@ -7,6 +7,18 @@ import { findUserByPhone } from "../modules/user/user.services";
 export const registerChatEvents = (io: Server, socket: Socket) => {
   const currentUserId = socket.data.userId;
 
+  socket.on("getConversations", async () => {
+    try {
+      const conversations = await Conversation.find({
+        participants: currentUserId,
+      });
+      socket.emit("existingConversations", {
+        conversations,
+      });
+    } catch (err) {
+      console.error(err);
+    }
+  });
   socket.on("startConversation", async ({ phoneNumber }) => {
     try {
       if (!phoneNumber) {
@@ -61,14 +73,12 @@ export const registerChatEvents = (io: Server, socket: Socket) => {
     }
   });
 
-  socket.on("groupConversation", async (phoneNumbers: number[]) => {
+  socket.on("groupConversation", async (phoneNumbers, name) => {
     try {
-      const targetUsersId: string[] = [];
+      const targetUsersId = [];
       for (const phone of phoneNumbers) {
         const user = await findUserByPhone(phone);
-        if (user) {
-          targetUsersId.push(user.id);
-        }
+        if (user) targetUsersId.push(user._id);
       }
 
       const participants = [currentUserId, ...targetUsersId];
@@ -83,25 +93,27 @@ export const registerChatEvents = (io: Server, socket: Socket) => {
           participants,
           admin: currentUserId,
           isGroup: true,
+          name,
         });
       }
 
       const roomId = conversation._id.toString();
 
-      const conversations = await Conversation.find({
-        participants: currentUserId,
-      });
+      socket.join(roomId);
 
-      for (const conv of conversations) {
-        socket.join(conv._id.toString());
-      }
+      participants.forEach((participantId) => {
+        io.to(participantId.toString()).emit("addedToGroup", {
+          groupName: conversation.name || "New Group",
+          conversationId: roomId,
+        });
+      });
 
       socket.emit("groupConversationStarted", {
         conversationId: roomId,
         participants: conversation.participants,
       });
     } catch (error) {
-      console.error(error);
+      console.error("groupConversation error:", error);
     }
   });
 
@@ -151,7 +163,8 @@ export const registerChatEvents = (io: Server, socket: Socket) => {
 
         if (isInRoom) {
           status = STATUS.READ;
-        } else {
+        } else { 
+           
           status = STATUS.DELIVERED;
         }
       }
@@ -173,7 +186,12 @@ export const registerChatEvents = (io: Server, socket: Socket) => {
         conversationId,
         message,
       });
-    } catch (err) {
+      //  conversation.participants.forEach(participantId => {
+      //    if (participantId.toString() !== currentUserId.toString()) {
+      //       io.to(participantId.toString()).emit("newMessage", { conversationId, message });
+      //  }
+      //  })
+      } catch (err) {
       console.error("sendMessage error:", err);
       socket.emit("error", { message: "Message failed" });
     }
@@ -194,33 +212,22 @@ export const registerChatEvents = (io: Server, socket: Socket) => {
       conversationId,
     });
   });
-
   socket.on("addGroupMember", async ({ conversationId, phoneNumber }) => {
     try {
-      if (!conversationId || !phoneNumber) {
-        return socket.emit("error", {
-          message: "conversationId and phoneNumber required",
-        });
-      }
-
       const conversation = await Conversation.findById(conversationId);
 
       if (!conversation || !conversation.isGroup) {
         return socket.emit("error", { message: "Group not found" });
       }
 
-      if (conversation.admin.toString() !== currentUserId) {
+      if (conversation.admin.toString() !== currentUserId.toString()) {
         return socket.emit("error", { message: "Only admin can add members" });
       }
 
       const user = await findUserByPhone(phoneNumber);
-
-      if (!user) {
-        return socket.emit("error", { message: "User not found" });
-      }
+      if (!user) return socket.emit("error", { message: "User not found" });
 
       const userId = user._id;
-
       if (conversation.participants.includes(userId)) {
         return socket.emit("error", { message: "User already in group" });
       }
@@ -229,11 +236,14 @@ export const registerChatEvents = (io: Server, socket: Socket) => {
       await conversation.save();
 
       const roomId = conversation._id.toString();
+      io.to(userId.toString()).emit("addedToGroup", {
+        groupName: conversation.name || "Group",
+        conversationId: roomId,
+      });
 
       io.to(roomId).emit("memberAdded", {
         conversationId: roomId,
-        userId,
-        addedBy: currentUserId,
+        userId: userId,
       });
     } catch (error) {
       console.error("addGroupMember error:", error);
@@ -278,6 +288,10 @@ export const registerChatEvents = (io: Server, socket: Socket) => {
       });
 
       const roomId = conversation._id.toString();
+      io.to(userId.toString()).emit("removedFromGroup", {
+        groupName: conversation.name || "Group",
+        conversationId: roomId,
+      });
 
       io.to(roomId).emit("memberRemoved", {
         conversationId: roomId,
