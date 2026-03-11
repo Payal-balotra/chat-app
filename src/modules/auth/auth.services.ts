@@ -1,6 +1,6 @@
 import redis from "../../config/redis";
 import { PublishCommand } from "@aws-sdk/client-sns";
-import { snsClient } from "../../config/sns";
+// import { snsClient } from "../../config/sns";
 
 
 export const setOtpRedis = (phone: string, otp: string) => {
@@ -17,9 +17,10 @@ export const createMessage = async (phone: string, otp: string) => {
       PhoneNumber: phone,
     });
 
-    const response = await snsClient.send(command);
+    // const response = await snsClient.send(command);
 
-    return response;
+    // return response;
+    return true;
   } catch (error) {
     console.error("SNS Error:", error);
     return null;
