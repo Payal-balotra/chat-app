@@ -5,11 +5,11 @@ import redis from "../config/redis";
 import { Conversation } from "../modules/conversation/conversation.model";
 import { User } from "../modules/user/user.model";
 import { Message, STATUS } from "../modules/message/message.model";
-import { findUserById } from "../modules/user/user.services";
 
 let io: Server;
 
 export const setUpSocket = (httpServer: any) => {
+  
   io = new Server(httpServer, {
     cors: {
       origin: "http://localhost:5173",

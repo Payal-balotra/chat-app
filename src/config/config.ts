@@ -5,13 +5,13 @@ dotenv.config();
 interface Config {
   port: number;
   mongoUri: string;
-  twilioSid: string;
-  twilioToken: string;
-  twilioNumber: string;
   secretKey : string;
-  awsAccessKey : string;
-  awsSecretKey : string;
-  awsRegion : string;
+  // twilioSid: string;
+  // twilioToken: string;
+  // twilioNumber: string;
+  // awsAccessKey : string;
+  // awsSecretKey : string;
+  // awsRegion : string;
 
 }
 
@@ -26,11 +26,11 @@ if (!parsedData.success) {
 export const config: Config = {
   port: Number(process.env.PORT),
   mongoUri: String(process.env.MONGO_URI),
-  twilioSid: String(process.env.TWILIO_ACCOUNT_SID),
-  twilioToken: String(process.env.TWILIO_AUTH_TOKEN),
-  twilioNumber: String(process.env.TWILIO_PHONE_NUMBER),
   secretKey : String(process.env.SECRET_KEY),
-  awsAccessKey : String(process.env.AWS_ACCESS_KEY_ID),
-  awsSecretKey  : String(process.env.AWS_SECRET_ACCESS_KEY),
-  awsRegion : String(process.env.AWS_REGION)
+  // twilioSid: String(process.env.TWILIO_ACCOUNT_SID),
+  // twilioToken: String(process.env.TWILIO_AUTH_TOKEN),
+  // twilioNumber: String(process.env.TWILIO_PHONE_NUMBER),
+  // awsAccessKey : String(process.env.AWS_ACCESS_KEY_ID),
+  // awsSecretKey  : String(process.env.AWS_SECRET_ACCESS_KEY),
+  // awsRegion : String(process.env.AWS_REGION)
 };
