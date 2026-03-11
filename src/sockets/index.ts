@@ -9,10 +9,10 @@ import { Message, STATUS } from "../modules/message/message.model";
 let io: Server;
 
 export const setUpSocket = (httpServer: any) => {
-  
+
   io = new Server(httpServer, {
     cors: {
-      origin: "http://localhost:5173",
+      origin: "https://chat-app-frontend-kko5.onrender.com",
       methods: ["GET", "POST", "PUT", "DELETE"],
       credentials: true,
     },
