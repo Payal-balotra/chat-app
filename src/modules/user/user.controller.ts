@@ -1,7 +1,15 @@
 import { Request, Response } from "express";
 import catchAsync from "../../utils/catchAsync";
-import { getUsers, updateUser, userCreateDirect, userProfile } from "./user.services";
+import {
+  findUserById,
+  findUserByPhone,
+  getUsers,
+  updateUser,
+  userCreateDirect,
+  userProfile,
+} from "./user.services";
 import { errorResponse, response } from "../../utils/response";
+import { User } from "./user.model";
 
 export const createUser = catchAsync(async (req: Request, res: Response) => {
   const { phone, name, bio, isVerified } = req.body;
@@ -16,19 +24,39 @@ export const createProfile = catchAsync(async (req: Request, res: Response) => {
   const user = await userProfile(userId, name, bio);
   return response(res, 200, "user profile created", user);
 });
-export const updateProfile =  catchAsync(async(req:Request ,res :Response)=>{
+export const updateProfile = catchAsync(async (req: Request, res: Response) => {
   const data = req.body;
   const userId = req.params.id as string;
-  if(!userId){
-    return errorResponse(res,400,"Please provide userId");
-  
-    }
-  console.log(data,"data");
-  console.log(userId,"userId")
-  const user = await updateUser(userId,data);
+  if (!userId) {
+    return errorResponse(res, 400, "Please provide userId");
+  }
+  console.log(data, "data");
+  console.log(userId, "userId");
+  const user = await updateUser(userId, data);
   return user;
-})
-export const getAllUsers = catchAsync(async(req : Request, res: Response)=>{
+});
+export const getAllUsers = catchAsync(async (req: Request, res: Response) => {
   const users = await getUsers();
-  return response(res,200,"All Users",users)
-})
+  return response(res, 200, "All Users", users);
+});
+
+export const addContact = catchAsync(async (req: Request, res: Response) => {
+  const user = req.user;
+  console.log(user, "user");
+  const phone = req.body.phone;
+  const contactUser = await findUserByPhone(phone);
+  if (!contactUser) {
+    return errorResponse(res, 404, "User Not Registered");
+  }
+  user.contacts.push(contactUser._id);
+  await user.save();
+
+  return response(res, 201, "Contact added successfully !", user);
+});
+
+export const getContacts = catchAsync(async (req: Request, res: Response) => {
+  const user = req.user;
+  
+  const data =await User.findById(user.id).populate("contacts", "name phone");
+  return response(res, 200, "Contacts", data);
+});

@@ -7,6 +7,7 @@ import helmet from "helmet";
 import { errorHandler, notFoundHandler } from "./middleware/globalErrorHandler";
 import { dbStatus } from "./config/db";
 import { setUpSocket } from "./sockets";
+import { config } from "./config/config";
 // import { sendOTP } from "./script/test"
 const app = express();
 
@@ -17,10 +18,10 @@ setUpSocket(server);
 const PORT = 5000;
 app.use(helmet());
 app.use(
-  cors({
-    origin: "https://chat-app-frontend-kko5.onrender.com",
+  cors({ 
+    origin: [config.corsOrigin,"http://localhost:5173"],
     methods: ["GET", "POST", "PUT", "DELETE"],
-    allowedHeaders: ["Content-Type", "Authorization"],
+    allowedHeaders: ["Content-Type", "Authorization"],  
     credentials: true,
   })
 );

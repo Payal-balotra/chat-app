@@ -5,14 +5,15 @@ import redis from "../config/redis";
 import { Conversation } from "../modules/conversation/conversation.model";
 import { User } from "../modules/user/user.model";
 import { Message, STATUS } from "../modules/message/message.model";
+import { config } from "../config/config";
+import { findUserById } from "../modules/user/user.services";
 
 let io: Server;
 
 export const setUpSocket = (httpServer: any) => {
-
   io = new Server(httpServer, {
     cors: {
-      origin: "https://chat-app-frontend-kko5.onrender.com",
+      origin: [config.corsOrigin, "http://localhost:5173"],
       methods: ["GET", "POST", "PUT", "DELETE"],
       credentials: true,
     },
@@ -30,7 +31,9 @@ export const setUpSocket = (httpServer: any) => {
       const token = authHeader.split(" ")[1];
 
       const decoded = await verifyJwtToken(token);
-      socket.data.userId = decoded?.id;
+      socket.data.userId = decoded.id;
+      const user = await findUserById(decoded?.id);
+      socket.data.user = user;
       next();
     } catch (err) {
       next(new Error("Invalid token"));
@@ -82,7 +85,6 @@ export const setUpSocket = (httpServer: any) => {
 
     socket.on("disconnect", async () => {
       console.log("User disconnected:", userId);
-
 
       await redis.srem(`online:${userId}`, socket.id);
 

@@ -1,13 +1,13 @@
-import express, { Request, Response } from "express";
-import { createProfile, createUser, getAllUsers, updateProfile } from "./user.controller";
+import express from "express";
+import { addContact, createProfile, createUser, getAllUsers, getContacts, updateProfile } from "./user.controller";
 import { numberValidation } from "../../middleware/message.middleware";
 import { verifyToken } from "../../middleware/auth.middleware";
 const router = express.Router();
 
-// router.post("/create-user", createUser);
 router.post("/profile/:id", createProfile);
 router.put("/profile/:id", updateProfile);
+router.post("/add",numberValidation,verifyToken,addContact);
+router.get("/getContacts",verifyToken,getContacts);
 
 router.get("/all-users",getAllUsers);
-// router.get("/me",verifyToken,getUser)
 export default router;  

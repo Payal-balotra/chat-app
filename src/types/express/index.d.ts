@@ -1,5 +1,5 @@
 import { HydratedDocument } from "mongoose";
-import { IUser } from "../../models/user.model";
+import { IUser } from "../../modules/user/user.model";
 declare global {
   namespace Express {
     interface Request {

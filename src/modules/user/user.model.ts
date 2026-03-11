@@ -1,4 +1,5 @@
 import mongoose, {  Mongoose, Schema } from "mongoose";
+import { Types } from "mongoose";
 
 export interface IUser {
   phone: number;
@@ -6,6 +7,7 @@ export interface IUser {
   bio: string;
   isVerified: boolean;
   isOnline: boolean;
+  contacts : Types.ObjectId[];
   lastSeen : Date;
 }
 const userSchema = new Schema<IUser>(
@@ -28,6 +30,13 @@ const userSchema = new Schema<IUser>(
     isOnline: {
       type: Boolean,
     },
+     contacts: [
+    {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "User",
+      default : []
+    }
+  ],
     lastSeen : {
       type : Date
     }

@@ -13,7 +13,7 @@ export const verifyToken = async (
   if (!token) return errorResponse(res, 401, "Access denied");
   try {
     const decoded = await verifyJwtToken(token);
-    const user = await findUserById(decoded.userId);
+    const user = await findUserById(decoded.id);
     if (!user) return errorResponse(res, 401, "user not found");
     if (!user.isVerified) return errorResponse(res, 401, "User is not verified");
     req.user = user;
