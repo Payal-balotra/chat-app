@@ -1,9 +1,11 @@
 import Redis from "ioredis";
+import { config } from "./config";
 
-const redis = new Redis({
-  host: "127.0.0.1",
-  port: 6379,
-  maxRetriesPerRequest: null,
+const redis = new Redis(
+  config.redisUrl  || "redis://127.0.0.1:6379",{
+  // host: "127.0.0.1",
+  // port: 6379,
+  maxRetriesPerRequest: null, 
 });
 
 redis.on("connect", () => {
