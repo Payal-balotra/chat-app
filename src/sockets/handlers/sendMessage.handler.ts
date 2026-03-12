@@ -7,7 +7,7 @@ import { getUserSockets } from "../utils/onlineUsers";
 export const sendMessageHandler = async (
   io: Server,
   socket: Socket,
-  data
+  data  : any
 ) => {
 
   try {

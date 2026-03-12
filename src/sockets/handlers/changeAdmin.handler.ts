@@ -4,7 +4,7 @@ import { Conversation } from "../../modules/conversation/conversation.model";
 export const changeAdminHandler = async (
   io: Server,
   socket: Socket,
-  { conversationId, newAdminId }
+  { conversationId, newAdminId } : any
 ) => {
 
   try {

@@ -5,11 +5,9 @@ import { findUserByPhone } from "../../modules/user/user.services";
 export const addGroupMemberHandler = async (
   io: Server,
   socket: Socket,
-  { conversationId, phoneNumber }
+  { conversationId, phoneNumber } : any
 ) => {
-
   try {
-
     const currentUserId = socket.data.userId;
 
     const conversation = await Conversation.findById(conversationId);
@@ -42,14 +40,10 @@ export const addGroupMemberHandler = async (
 
     io.to(roomId).emit("memberAdded", {
       conversationId: roomId,
-      userId
+      userId,
     });
-
   } catch (err) {
-
     console.error("addGroupMember error:", err);
     socket.emit("error", { message: "Failed to add member" });
-
   }
-
 };

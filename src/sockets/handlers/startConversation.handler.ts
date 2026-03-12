@@ -2,13 +2,12 @@ import { Server, Socket } from "socket.io";
 import { Conversation } from "../../modules/conversation/conversation.model";
 import { Message } from "../../modules/message/message.model";
 import { findUserByPhone } from "../../modules/user/user.services";
-import redis from "../../config/redis";
 import { getUserSockets } from "../utils/onlineUsers";
 
 export const startConversationHandler = async (
   io: Server,
   socket: Socket,
-  { phoneNumber },
+  { phoneNumber }  : any
 ) => {
   try {
     if (!phoneNumber) {

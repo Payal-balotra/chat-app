@@ -3,7 +3,7 @@ import { Server, Socket } from "socket.io";
 export const typingHandler = async (
   io: Server,
   socket: Socket,
-  { conversationId }
+  { conversationId } : any
 ) => {
 
   try {

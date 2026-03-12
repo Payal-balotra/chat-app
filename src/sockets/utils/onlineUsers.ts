@@ -8,7 +8,7 @@ export const removeUserSocket = async (userId: string, socketId: string) => {
   await redis.srem(`online:${userId}`, socketId);
 };
 
-export const getUserSockets = async (userId: string) => {
+export const getUserSockets = async (userId: any) => {
   return await redis.smembers(`online:${userId}`);
 };
 

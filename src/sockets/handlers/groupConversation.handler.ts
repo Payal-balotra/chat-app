@@ -5,8 +5,8 @@ import { findUserByPhone } from "../../modules/user/user.services";
 export const groupConversationHandler = async (
   io: Server,
   socket: Socket,
-  phoneNumbers,
-  name
+  phoneNumbers: any[],
+  name: any
 ) => {
 
   try {
@@ -17,7 +17,7 @@ export const groupConversationHandler = async (
       phoneNumbers.map(phone => findUserByPhone(phone))
     );
     // it remove if phone do not exist and get ids  
-    const targetUsersId = users.filter(Boolean).map(user => user._id);
+    const targetUsersId = users.filter(Boolean).map(user => user?._id);
 
     const participants = [currentUserId, ...targetUsersId];
 

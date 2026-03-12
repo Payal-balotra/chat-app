@@ -5,7 +5,7 @@ import { getUserSockets } from "../utils/onlineUsers";
 export const removeGroupMemberHandler = async (
   io: Server,
   socket: Socket,
-  { conversationId, userId }
+  { conversationId, userId } : any
 ) => {
 
   try {

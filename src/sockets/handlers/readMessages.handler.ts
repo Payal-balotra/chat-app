@@ -4,7 +4,7 @@ import { Message } from "../../modules/message/message.model";
 export const readMessagesHandler = async (
   io: Server,
   socket: Socket,
-  { conversationId }
+  { conversationId } : any
 ) => {
 
   try {

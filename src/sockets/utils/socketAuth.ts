@@ -1,13 +1,14 @@
+import { Socket } from "socket.io";
 import { verifyJwtToken } from "../../lib/jwt";
 import { findUserById } from "../../modules/user/user.services";
 
-export const socketAuth = async (socket, next) => {
+export const socketAuth = async (socket : Socket,   next: (err?: Error) => void) => {
 
   try {
     const authHeader = socket.handshake.headers.authorization;
 
     if (!authHeader) {
-      return next(new Error("Authorization missing"));
+      return next(new Error("Authorization missing"));``
     }
 
     const token = authHeader.split(" ")[1];
