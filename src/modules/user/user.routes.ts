@@ -1,5 +1,5 @@
 import express from "express";
-import { addContact, createProfile, createUser, deleteContact, getAllUsers, getContacts, updateProfile } from "./user.controller";
+import { addContact, createProfile, deleteContact, getAllUsers, getContacts, updateProfile } from "./user.controller";
 import { numberValidation } from "../../middleware/message.middleware";
 import { verifyToken } from "../../middleware/auth.middleware";
 const router = express.Router();

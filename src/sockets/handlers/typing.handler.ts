@@ -7,7 +7,6 @@ export const typingHandler = async (
 ) => {
 
   try {
-
     const userId = socket.data.userId;
 
     socket.to(conversationId).emit("typing", {

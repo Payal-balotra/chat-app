@@ -10,7 +10,6 @@ import {
 } from "./user.services";
 import { errorResponse, response } from "../../utils/response";
 import { User } from "./user.model";
-import { UserBindingInstance } from "twilio/lib/rest/chat/v2/service/user/userBinding";
 
 export const createUser = catchAsync(async (req: Request, res: Response) => {
   const { phone, name, bio, isVerified } = req.body;
@@ -26,13 +25,16 @@ export const createProfile = catchAsync(async (req: Request, res: Response) => {
   return response(res, 200, "user profile created", user);
 });
 export const updateProfile = catchAsync(async (req: Request, res: Response) => {
+  console.log("inside profile update")
   const data = req.body;
   const userId = req.params.id as string;
   if (!userId) {
     return errorResponse(res, 400, "Please provide userId");
   }
+  console.log("userID",userId)
   const user = await updateUser(userId, data);
-  return user;
+  console.log(user,"updated user ")
+  return response(res,200,"user profile updated",user);
 });
 export const getAllUsers = catchAsync(async (req: Request, res: Response) => {
   const users = await getUsers();
@@ -42,6 +44,8 @@ export const getAllUsers = catchAsync(async (req: Request, res: Response) => {
 export const addContact = catchAsync(async (req: Request, res: Response) => {
   const user = req.user;
   const phone = req.body.phone;
+  // check already a member or not 
+  
   const contactUser = await findUserByPhone(phone);
   if (!contactUser) {
     return errorResponse(res, 404, "User Not Registered");

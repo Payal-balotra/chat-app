@@ -8,6 +8,7 @@ import { findUserByPhone, userRegister } from "../user/user.services";
 import { generateAccessToken } from "../../lib/jwt";
 
 export const register = catchAsync(async (req: Request, res: Response) => {
+
   const  {phone}  = req.body;
   if (!phone) {
     return errorResponse(res, 400, "Phone number required");
