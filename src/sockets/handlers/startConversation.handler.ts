@@ -29,7 +29,7 @@ export const startConversationHandler = async (
       participants: { $all: [currentUserId, targetUserId] },
     });
 
-    // if no conersation then create one
+    // if no convresation then create one
     if (!conversation) {
       conversation = await Conversation.create({
         participants: [currentUserId, targetUserId],

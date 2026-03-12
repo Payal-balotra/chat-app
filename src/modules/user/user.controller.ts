@@ -10,6 +10,7 @@ import {
 } from "./user.services";
 import { errorResponse, response } from "../../utils/response";
 import { User } from "./user.model";
+import { UserBindingInstance } from "twilio/lib/rest/chat/v2/service/user/userBinding";
 
 export const createUser = catchAsync(async (req: Request, res: Response) => {
   const { phone, name, bio, isVerified } = req.body;
@@ -30,8 +31,6 @@ export const updateProfile = catchAsync(async (req: Request, res: Response) => {
   if (!userId) {
     return errorResponse(res, 400, "Please provide userId");
   }
-  console.log(data, "data");
-  console.log(userId, "userId");
   const user = await updateUser(userId, data);
   return user;
 });
@@ -42,7 +41,6 @@ export const getAllUsers = catchAsync(async (req: Request, res: Response) => {
 
 export const addContact = catchAsync(async (req: Request, res: Response) => {
   const user = req.user;
-  console.log(user, "user");
   const phone = req.body.phone;
   const contactUser = await findUserByPhone(phone);
   if (!contactUser) {
@@ -56,7 +54,16 @@ export const addContact = catchAsync(async (req: Request, res: Response) => {
 
 export const getContacts = catchAsync(async (req: Request, res: Response) => {
   const user = req.user;
-  
-  const data =await User.findById(user.id).populate("contacts", "name phone");
+
+  const data = await User.findById(user.id).populate("contacts", "name phone");
   return response(res, 200, "Contacts", data);
+});
+
+export const deleteContact = catchAsync(async (req: Request, res: Response) => {
+  const userId = req.params.id as string;
+  const result = await User.updateOne(
+    { _id: req.user.id },
+    { $pull: { contacts: userId } },
+  );
+  return response(res,200,"Contact deleted successfully",result)
 });
