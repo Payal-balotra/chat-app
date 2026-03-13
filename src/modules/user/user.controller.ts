@@ -25,16 +25,14 @@ export const createProfile = catchAsync(async (req: Request, res: Response) => {
   return response(res, 200, "user profile created", user);
 });
 export const updateProfile = catchAsync(async (req: Request, res: Response) => {
-  console.log("inside profile update")
   const data = req.body;
   const userId = req.params.id as string;
   if (!userId) {
     return errorResponse(res, 400, "Please provide userId");
   }
-  console.log("userID",userId)
+
   const user = await updateUser(userId, data);
-  console.log(user,"updated user ")
-  return response(res,200,"user profile updated",user);
+  return response(res, 200, "user profile updated", user);
 });
 export const getAllUsers = catchAsync(async (req: Request, res: Response) => {
   const users = await getUsers();
@@ -44,11 +42,14 @@ export const getAllUsers = catchAsync(async (req: Request, res: Response) => {
 export const addContact = catchAsync(async (req: Request, res: Response) => {
   const user = req.user;
   const phone = req.body.phone;
-  // check already a member or not 
   
   const contactUser = await findUserByPhone(phone);
   if (!contactUser) {
     return errorResponse(res, 404, "User Not Registered");
+  }
+  const alreadyMember = user.contacts.includes(contactUser._id);
+  if(alreadyMember){
+    return errorResponse(res,400,"Already in contact list ");
   }
   user.contacts.push(contactUser._id);
   await user.save();
@@ -69,5 +70,5 @@ export const deleteContact = catchAsync(async (req: Request, res: Response) => {
     { _id: req.user.id },
     { $pull: { contacts: userId } },
   );
-  return response(res,200,"Contact deleted successfully",result)
+  return response(res, 200, "Contact deleted successfully", result);
 });
