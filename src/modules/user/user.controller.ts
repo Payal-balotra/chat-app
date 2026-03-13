@@ -42,14 +42,15 @@ export const getAllUsers = catchAsync(async (req: Request, res: Response) => {
 export const addContact = catchAsync(async (req: Request, res: Response) => {
   const user = req.user;
   const phone = req.body.phone;
-  
+  // check already a member or not
+
   const contactUser = await findUserByPhone(phone);
   if (!contactUser) {
     return errorResponse(res, 404, "User Not Registered");
   }
   const alreadyMember = user.contacts.includes(contactUser._id);
-  if(alreadyMember){
-    return errorResponse(res,400,"Already in contact list ");
+  if (alreadyMember) {
+    return errorResponse(res, 400, "Already in contact list ");
   }
   user.contacts.push(contactUser._id);
   await user.save();
